@@ -204,9 +204,9 @@ document.addEventListener("DOMContentLoaded", function () {
     
   // Create searchers array
   const searchers = [
-    { x: 70, y: 340, color: "#009E73", proximity: "Search for signal" },
-    { x: 80, y: 345, color: "#56B4E9", proximity: "Search for signal" },
-    { x: 90, y: 350, color: "#E69F00", proximity: "Search for signal" },
+    { x: 150, y: 150, color: "#009E73", proximity: "Search for signal" },
+    { x: 160, y: 160, color: "#56B4E9", proximity: "Search for signal" },
+    { x: 170, y: 170, color: "#E69F00", proximity: "Search for signal" },
   ];
   
   function isInsideTriangle(px, py) {
@@ -237,6 +237,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
   
+
   function moveSearchers() {
     searchers.forEach((searcher) => {
       const angle = Math.random() * 2 * Math.PI;
@@ -249,52 +250,53 @@ document.addEventListener("DOMContentLoaded", function () {
         const proximity = Math.round(distance / (mountainCanvas.width / 4 / 40));
         searcher.proximity = proximity <= 40 ? proximity : "Search for signal";
   
-        // Respond to the signal source
-        if (searcher.proximity <= 5 && !searcher.isProbing) {
+        if (searcher.proximity <= 5 && !searcher.isProbing && !searcher.isHelping) {
           searcher.isProbing = true;
           searcher.proximity = "Probing...!";
-          searcher.x += Math.sign(victimX - searcher.x) * speed * 0.5;
-          searcher.y += Math.sign(victimY - searcher.y) * speed * 0.5;
-    
           setTimeout(() => {
             searcher.proximity = "Probe Strike!";
-          }, Math.floor(Math.random() * 5000) + 1000);
-        } else if (proximity <= 40 && !searcher.isProbing) {
-          const randomPercentage = Math.random() * 100;
-          if (randomPercentage < 80) {
-            searcher.x += Math.sign(victimX - searcher.x) * speed;
-            searcher.y += Math.sign(victimY - searcher.y) * speed;
-          } else if (randomPercentage < 95) {
-            const arcAngle = Math.random() * Math.PI / 4;
-            searcher.x += Math.cos(angle + arcAngle) * speed;
-            searcher.y += Math.sin(angle + arcAngle) * speed;
-          } else {
-            searcher.x -= Math.sign(victimX - searcher.x) * speed;
-            searcher.y -= Math.sign(victimY - searcher.y) * speed;
+            searcher.x = victimX;
+            searcher.y = victimY;
+  
             setTimeout(() => {
-              searcher.x += Math.sign(victimX - searcher.x) * speed;
-              searcher.y += Math.sign(victimY - searcher.y) * speed;
-            }, 1000);
-          }
-        } else if (!searcher.isProbing) {
+              searcher.proximity = "Digging...";
+              searchers.forEach((helper) => {
+                if (helper !== searcher && !helper.isHelping) {
+                  const distanceToSearcher = calculateDistance(helper.x, helper.y, searcher.x, searcher.y);
+                  if (distanceToSearcher <= 10) {
+                    helper.isHelping = true;
+                    helper.proximity = "Helping";
+                    helper.x += Math.sign(searcher.x - helper.x) * 10;
+                    helper.y += Math.sign(searcher.y - helper.y) * 10;
+                  }
+                }
+              });
+  
+            }, 3000);
+  
+          }, Math.floor(Math.random() * 5000) + 1000);
+  
+        } else if (!searcher.isProbing && !searcher.isHelping) {
+          
           const randomPercentage = Math.random() * 100;
-          if (randomPercentage < 60) {
-            // Move mostly horizontally from left to right
-            const horizontalAngle = Math.PI / 4;
-            searcher.x += Math.cos(angle + horizontalAngle) * speed;
-            searcher.y += Math.sin(angle + horizontalAngle) * speed;
-          } else if (randomPercentage < 80) {
-            // Move in a random direction
-            searcher.x += Math.cos(angle) * speed;
-            searcher.y += Math.sin(angle) * speed;
+          const angleToVictim = Math.atan2(victimY - searcher.y, victimX - searcher.x);
+          const arcAngle = (Math.PI / 180) * 45; // 45 degrees in radians
+        
+          if (randomPercentage < 85) {
+            // Move in an arc towards the victim
+            searcher.x += Math.cos(angleToVictim + arcAngle) * speed;
+            searcher.y += Math.sin(angleToVictim + arcAngle) * speed;
           } else {
-            // Move mostly horizontally from right to left
-            const horizontalAngle = -Math.PI / 4;
-            searcher.x += Math.cos(angle + horizontalAngle) * speed;
-            searcher.y += Math.sin(angle + horizontalAngle) * speed;
+            // 15% chance of moving in the wrong direction
+            searcher.x += Math.cos(angle + Math.PI) * speed;
+            searcher.y += Math.sin(angle + Math.PI) * speed;
           }
         }
+        
+
       } else {
+        
+        // Signal search
         // Move searcher towards the center of the base of the triangle
         const centerX = (100 + 500) / 2;
         const centerY = 350;
@@ -305,7 +307,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   }
-  
+ 
 
   function clearCanvas() {
     ctx.clearRect(0, 0, mountainCanvas.width, mountainCanvas.height);
