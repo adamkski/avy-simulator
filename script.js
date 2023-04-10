@@ -237,34 +237,29 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
   
-
   function moveSearchers() {
     searchers.forEach((searcher) => {
       const angle = Math.random() * 2 * Math.PI;
-      const speed = 4;
+      const speed = 10;
   
       // Check if searcher is inside the triangle
       if (isInsideTriangle(searcher.x, searcher.y)) {
+        // Check for proximity and update
         const distance = calculateDistance(searcher.x, searcher.y, victimX, victimY);
         const proximity = Math.round(distance / (mountainCanvas.width / 4 / 40));
         searcher.proximity = proximity <= 40 ? proximity : "Search for signal";
   
-        // If proximity is within 5 and searcher is not probing
-        if (proximity <= 5 && !searcher.isProbing) {
-          searcher.x += Math.sign(victimX - searcher.x) * speed * 0.1;
-          searcher.y += Math.sign(victimY - searcher.y) * speed * 0.1;
-  
-          if (Math.abs(victimX - searcher.x) < 0.1 && Math.abs(victimY - searcher.y) < 0.1) {
-            searcher.isProbing = true;
-            searcher.proximity = "Probing...!";
-            setTimeout(() => {
-              searcher.proximity = "Probe Strike!";
-            }, Math.floor(Math.random() * 4000) + 1000);
-          }
-        } else if (!searcher.isProbing) {
-
-        // Respond to the signal source (random walk)
-        if (proximity <= 40) {
+        // Respond to the signal source
+        if (searcher.proximity <= 5 && !searcher.isProbing) {
+          searcher.isProbing = true;
+          searcher.proximity = "Probing...!";
+          searcher.x += Math.sign(victimX - searcher.x) * speed * 0.5;
+          searcher.y += Math.sign(victimY - searcher.y) * speed * 0.5;
+    
+          setTimeout(() => {
+            searcher.proximity = "Probe Strike!";
+          }, Math.floor(Math.random() * 5000) + 1000);
+        } else if (proximity <= 40 && !searcher.isProbing) {
           const randomPercentage = Math.random() * 100;
           if (randomPercentage < 80) {
             searcher.x += Math.sign(victimX - searcher.x) * speed;
@@ -281,17 +276,36 @@ document.addEventListener("DOMContentLoaded", function () {
               searcher.y += Math.sign(victimY - searcher.y) * speed;
             }, 1000);
           }
-        }
-
+        } else if (!searcher.isProbing) {
+          const randomPercentage = Math.random() * 100;
+          if (randomPercentage < 60) {
+            // Move mostly horizontally from left to right
+            const horizontalAngle = Math.PI / 4;
+            searcher.x += Math.cos(angle + horizontalAngle) * speed;
+            searcher.y += Math.sin(angle + horizontalAngle) * speed;
+          } else if (randomPercentage < 80) {
+            // Move in a random direction
+            searcher.x += Math.cos(angle) * speed;
+            searcher.y += Math.sin(angle) * speed;
+          } else {
+            // Move mostly horizontally from right to left
+            const horizontalAngle = -Math.PI / 4;
+            searcher.x += Math.cos(angle + horizontalAngle) * speed;
+            searcher.y += Math.sin(angle + horizontalAngle) * speed;
+          }
         }
       } else {
-        // Move searcher towards the triangle
-        searcher.x += Math.cos(angle) * speed;
-        searcher.y += Math.sin(angle) * speed;
+        // Move searcher towards the center of the base of the triangle
+        const centerX = (100 + 500) / 2;
+        const centerY = 350;
+        const angleToCenter = Math.atan2(centerY - searcher.y, centerX - searcher.x);
+  
+        searcher.x += Math.cos(angleToCenter) * speed;
+        searcher.y += Math.sin(angleToCenter) * speed;
       }
     });
   }
-
+  
 
   function clearCanvas() {
     ctx.clearRect(0, 0, mountainCanvas.width, mountainCanvas.height);
